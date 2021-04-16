@@ -63,6 +63,11 @@ class StagingAreaValidator:
                             required=True,
                             help='The Google Cloud Storage URL of the staging area. '
                                  'Syntax is gs://<bucket>[/<path>].')
+        parser.add_argument('--ignore-dangling-inputs', '-I',
+                            action='store_true',
+                            default=False,
+                            help='Ignore errors caused by metadata files not found '
+                                 'in the staging area for input-only entities.')
         parser.add_argument('--no-json-validation', '-J',
                             action='store_false',
                             default=True,
@@ -141,35 +146,58 @@ class StagingAreaValidator:
         file_json = self.download_blob_as_json(blob)
         self.validate_file_json(file_json, blob.name)
         for link in file_json['links']:
-            if link['link_type'] == 'process_link':
-                self.add_metadata_file(link['process_id'], link['process_type'], project_uuid)
-                for link_type in ('input', 'output', 'protocol'):
-                    for file in link[f'{link_type}s']:
-                        file_type = file[f'{link_type}_type']
-                        file_id = file[f'{link_type}_id']
-                        self.add_metadata_file(file_id, file_type, project_uuid)
-            elif link['link_type'] == 'supplementary_file_link':
+            link_type = link['link_type']
+            if link_type == 'process_link':
+                self.add_metadata_file(entity_id=link['process_id'],
+                                       entity_type=link['process_type'],
+                                       project_uuid=project_uuid,
+                                       category='process')
+                for category in ('input', 'output', 'protocol'):
+                    for entity in link[f'{category}s']:
+                        entity_type = entity[f'{category}_type']
+                        entity_id = entity[f'{category}_id']
+                        self.add_metadata_file(entity_id=entity_id,
+                                               entity_type=entity_type,
+                                               project_uuid=project_uuid,
+                                               category=category)
+            elif link_type == 'supplementary_file_link':
                 assert link['entity']['entity_type'] == 'project', link['entity']
                 assert link['entity']['entity_id'] == project_uuid, link['entity']
-                for file in link['files']:
-                    file_type = file['file_type']
-                    file_id = file['file_id']
-                    self.add_metadata_file(file_id, file_type, project_uuid)
+                for entity in link['files']:
+                    entity_type = entity['file_type']
+                    entity_id = entity['file_id']
+                    self.add_metadata_file(entity_id=entity_id,
+                                           entity_type=entity_type,
+                                           project_uuid=project_uuid,
+                                           category='supplementary')
         if project_uuid not in self.metadata_files:
-            self.add_metadata_file(project_uuid, 'project', project_uuid)
+            self.add_metadata_file(entity_id=project_uuid,
+                                   entity_type='project',
+                                   project_uuid=project_uuid,
+                                   category='project')
 
-    def add_metadata_file(self, file_id, file_type, project_uuid):
+    def add_metadata_file(self,
+                          entity_id: str,
+                          entity_type: str,
+                          project_uuid: str,
+                          category: str
+                          ) -> None:
         try:
-            self.metadata_files[file_id]['projects'].add(project_uuid)
+            file = self.metadata_files[entity_id]
         except KeyError:
-            self.metadata_files[file_id] = {
+            self.metadata_files[entity_id] = {
                 'name': None,
+                'entity_id': entity_id,
+                'entity_type': entity_type,
                 'version': None,
-                'file_type': file_type,
-                'projects': {project_uuid},
+                'project': {project_uuid},
+                'category': {category},
                 'found_metadata': False,
             }
-        assert self.metadata_files[file_id]['file_type'] == file_type
+        else:
+            file['project'].add(project_uuid)
+            file['category'].add(category)
+        assert self.metadata_files[entity_id]['entity_type'] == entity_type
 
     def validate_metadata_file(self, blob: gcs.Blob) -> None:
         # Expected syntax: metadata/{metadata_type}/{metadata_id}_{version}.json
@@ -236,7 +264,8 @@ class StagingAreaValidator:
         if metadata_file := self.metadata_files.get(metadata_id):
             metadata_file['found_descriptor'] = True
             metadata_file['crc32c'] = file_json['crc32c']
-            assert metadata_file['version'] == metadata_version
+            version = metadata_file['version']
+            assert version == metadata_version, f'{version} != {metadata_version}'
         else:
             self.extra_files.append(blob.name)
 
@@ -273,17 +302,29 @@ class StagingAreaValidator:
             print('No errors found')
 
     def check_result(self, metadata_file):
-        if metadata_file['file_type'] == 'project':
-            if not metadata_file['found_metadata']:
-                log.warning('A metadata file was not found for project %s',
-                            one(metadata_file['projects']))
+        if self.args.ignore_dangling_inputs and metadata_file['category'] == {'input'}:
+            pass
         else:
-            assert metadata_file['found_metadata'], metadata_file
-        if metadata_file['file_type'].endswith('_file'):
-            assert metadata_file['found_descriptor'], metadata_file
-            assert metadata_file['found_data_file'], metadata_file
-        if 'valid_stratification' in metadata_file:
-            assert metadata_file['valid_stratification']
+            if not metadata_file['found_metadata']:
+                if metadata_file['entity_type'] == 'project':
+                    log.warning('A metadata file was not found for project %s',
+                                one(metadata_file['project']))
+                else:
+                    raise Exception('Did not find metadata file', metadata_file)
+            if metadata_file['entity_type'].endswith('_file'):
+                if not metadata_file['found_descriptor']:
+                    raise Exception('Did not find descriptor file', metadata_file)
+                if not metadata_file['found_data_file']:
+                    raise Exception('Did not find data file', metadata_file)
+        try:
+            stratification = metadata_file['valid_stratification']
+        except KeyError:
+            pass
+        else:
+            if not stratification:
+                raise Exception('File has a invalid stratification value', metadata_file)
+            else:
+                pass
 
     def validate_uuid(self, value: str) -> None:
         """
