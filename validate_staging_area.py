@@ -86,7 +86,7 @@ class StagingAreaValidator:
         # The status of each metadata file checked
         self.metadata_files: MutableMapping[str, JSON] = {}
         # A mapping of file name to validation error
-        self.file_errors: MutableMapping[str, BaseException] = {}
+        self.file_errors: MutableMapping[str, Exception] = {}
         # Any files found that are not part of a subgraph link
         self.extra_files: MutableSequence[str] = []
         self.bucket, self.sa_path = self._parse_gcs_url(self.args.staging_area)
@@ -129,12 +129,12 @@ class StagingAreaValidator:
                 validate_file_fn(blob)
             except KeyboardInterrupt:
                 exit()
-            except BaseException as e:
+            except Exception as e:
                 log.error('File error: %s', blob.name)
                 self.file_errors[blob.name] = e
 
     def download_blob_as_json(self, blob: gcs.Blob) -> Optional[JSON]:
-        file_json = json.loads(blob.download_as_string())
+        file_json = json.loads(blob.download_as_bytes())
         return file_json
 
     def validate_links_file(self, blob: gcs.Blob) -> None:
@@ -220,8 +220,8 @@ class StagingAreaValidator:
             if metadata_type == 'supplementary_file' and file_json.get('provenance', {}).get('submitter_id'):
                 try:
                     self.validate_file_description(file_json.get('file_description'))
-                except BaseException as e:
-                    self.file_errors[blob.name] = BaseException(e)
+                except Exception as e:
+                    self.file_errors[blob.name] = e
                     metadata_file['valid_stratification'] = False
                     log.error('Invalid file_description in %s.', blob.name)
                 else:
@@ -286,7 +286,7 @@ class StagingAreaValidator:
         if self.args.validate_json:
             try:
                 self.validator.validate_json(file_json, file_name)
-            except BaseException as e:
+            except Exception as e:
                 log.error('File %s failed json validation.', file_name)
                 self.file_errors[file_name] = e
 
@@ -295,7 +295,7 @@ class StagingAreaValidator:
         for metadata_id, metadata_file in self.metadata_files.items():
             try:
                 self.check_result(metadata_file)
-            except BaseException as e:
+            except Exception as e:
                 log.error('File error: %s', metadata_file)
                 self.file_errors[metadata_id] = e
         if not self.file_errors and not self.extra_files:
@@ -340,16 +340,16 @@ class SchemaValidator:
 
     @classmethod
     def validate_json(cls, file_json: JSON, file_name: str):
-        print('Validating JSON of %s', file_name)
+        print(f'Validating JSON of {file_name}')
         try:
             schema = cls._download_schema(file_json['describedBy'])
         except json.decoder.JSONDecodeError as e:
-            raise Exception(f"Unable to parse json from {file_json['describedBy']} for file {file_name}") from e
+            schema_url = file_json['describedBy']
+            raise Exception('Failed to parse schema JSON', file_name, schema_url) from e
         try:
             validate(file_json, schema, format_checker=FormatChecker())
         except ValidationError as e:
-            # Add filename to exception message but also keep original args[0]
-            raise ValidationError(f'File {file_name} caused: {e.args[0]}') from e
+            raise ValidationError(f'File {file_name}') from e
 
     @classmethod
     @lru_cache
