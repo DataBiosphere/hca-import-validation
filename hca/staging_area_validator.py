@@ -1,13 +1,12 @@
-import argparse
 import base64
+import json
+import logging
+import uuid
 from functools import (
     cached_property,
     lru_cache,
 )
-import json
-import logging
 from typing import (
-    List,
     MutableMapping,
     MutableSequence,
     Optional,
@@ -17,9 +16,9 @@ from typing import (
 from urllib import (
     parse,
 )
-import uuid
 
 import google.cloud.storage as gcs
+import requests
 from jsonschema import (
     FormatChecker,
     ValidationError,
@@ -28,7 +27,6 @@ from jsonschema import (
 from more_itertools import (
     one,
 )
-import requests
 
 T = TypeVar('T')
 JSON = MutableMapping[str, T]
