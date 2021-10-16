@@ -171,7 +171,8 @@ class StagingAreaValidator:
                 'name': None,
                 'entity_id': entity_id,
                 'entity_type': entity_type,
-                'version': None,
+                'metadata_versions': set(),
+                'descriptor_versions': set(),
                 'project': {project_uuid},
                 'category': {category},
                 'found_metadata': False,
@@ -193,11 +194,10 @@ class StagingAreaValidator:
             assert metadata_id == provenance['document_id']
         if metadata_file := self.metadata_files.get(metadata_id):
             metadata_file['name'] = blob.name
-            metadata_file['version'] = metadata_version
+            metadata_file['metadata_versions'].add(metadata_version)
             metadata_file['found_metadata'] = True
             if metadata_type.endswith('_file'):
                 metadata_file['data_file_name'] = file_json['file_core']['file_name']
-                metadata_file['found_descriptor'] = False
                 metadata_file['found_data_file'] = False
             if metadata_type == 'supplementary_file' and file_json.get('provenance', {}).get('submitter_id'):
                 try:
@@ -235,19 +235,21 @@ class StagingAreaValidator:
 
     def validate_descriptors_file(self, blob: gcs.Blob) -> None:
         # Expected syntax: descriptors/{metadata_type}/{metadata_id}_{version}.json
-        metadata_type, metadata_file = blob.name.split('/')[-2:]
-        assert metadata_file.count('_') == 1
-        assert metadata_file.endswith('.json')
-        metadata_id, metadata_version = metadata_file.split('_')
+        metadata_type, descriptor_file = blob.name.split('/')[-2:]
+        assert descriptor_file.count('_') == 1
+        assert descriptor_file.endswith('.json')
+
+        metadata_id, descriptor_version = descriptor_file.split('_')
         file_json = self.download_blob_as_json(blob)
         self.validate_file_json(file_json, blob.name)
         file_name = file_json['file_name']
         self.names_to_id[file_name] = metadata_id
+
         if metadata_file := self.metadata_files.get(metadata_id):
-            metadata_file['found_descriptor'] = True
             metadata_file['crc32c'] = file_json['crc32c']
-            version = metadata_file['version']
-            assert version == metadata_version, f'{version} != {metadata_version}'
+            metadata_versions = metadata_file['metadata_versions']
+            assert descriptor_version in metadata_versions, f'Corresponding metadata version for descriptor version {descriptor_version} not found'
+            metadata_file['descriptor_versions'].add(descriptor_version)
         else:
             self.extra_files.append(blob.name)
 
@@ -294,7 +296,7 @@ class StagingAreaValidator:
                 else:
                     raise Exception('Did not find metadata file', metadata_file)
             if metadata_file['entity_type'].endswith('_file'):
-                if not metadata_file['found_descriptor']:
+                if not metadata_file['descriptor_versions'] == metadata_file['metadata_versions']:
                     raise Exception('Did not find descriptor file', metadata_file)
                 if not metadata_file['found_data_file']:
                     raise Exception('Did not find data file', metadata_file)
