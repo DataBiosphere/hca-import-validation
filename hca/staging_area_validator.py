@@ -239,7 +239,7 @@ class StagingAreaValidator:
         assert descriptor_file.count('_') == 1
         assert descriptor_file.endswith('.json')
 
-        metadata_id, descriptor_version = descriptor_file.split('_')
+        metadata_id, descriptor_version = descriptor_file[:-5].split('_')
         file_json = self.download_blob_as_json(blob)
         self.validate_file_json(file_json, blob.name)
         file_name = file_json['file_name']
