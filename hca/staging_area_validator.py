@@ -168,7 +168,7 @@ class StagingAreaValidator:
             file = self.metadata_files[entity_id]
         except KeyError:
             self.metadata_files[entity_id] = {
-                'name': None,
+                'name': set(),
                 'entity_id': entity_id,
                 'entity_type': entity_type,
                 'metadata_versions': set(),
@@ -193,7 +193,7 @@ class StagingAreaValidator:
         if provenance := file_json.get('provenance'):
             assert metadata_id == provenance['document_id']
         if metadata_file := self.metadata_files.get(metadata_id):
-            metadata_file['name'] = blob.name
+            metadata_file['name'].add(blob.name)
             metadata_file['metadata_versions'].add(metadata_version)
             metadata_file['found_metadata'] = True
             if metadata_type.endswith('_file'):
