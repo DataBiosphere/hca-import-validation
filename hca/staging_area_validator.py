@@ -187,7 +187,7 @@ class StagingAreaValidator:
         metadata_type, metadata_file = blob.name.split('/')[-2:]
         assert metadata_file.count('_') == 1
         assert metadata_file.endswith('.json')
-        metadata_id, metadata_version = metadata_file.split('_')
+        metadata_id, metadata_version = metadata_file[:-5].split('_')
         file_json = self.download_blob_as_json(blob)
         self.validate_file_json(file_json, blob.name)
         if provenance := file_json.get('provenance'):
@@ -239,7 +239,7 @@ class StagingAreaValidator:
         assert descriptor_file.count('_') == 1
         assert descriptor_file.endswith('.json')
 
-        metadata_id, descriptor_version = descriptor_file.split('_')
+        metadata_id, descriptor_version = descriptor_file[:-5].split('_')
         file_json = self.download_blob_as_json(blob)
         self.validate_file_json(file_json, blob.name)
         file_name = file_json['file_name']
