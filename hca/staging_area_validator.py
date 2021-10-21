@@ -297,7 +297,7 @@ class StagingAreaValidator:
                     raise Exception('Did not find metadata file', metadata_file)
             if metadata_file['entity_type'].endswith('_file'):
                 if not metadata_file['descriptor_versions'] == metadata_file['metadata_versions']:
-                    raise Exception('Did not find descriptor file', metadata_file)
+                    raise Exception('Did not find a matching descriptor file', metadata_file)
                 if not metadata_file['found_data_file']:
                     raise Exception('Did not find data file', metadata_file)
         try:
