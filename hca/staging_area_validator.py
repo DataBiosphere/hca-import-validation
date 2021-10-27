@@ -295,6 +295,10 @@ class StagingAreaValidator:
                                 one(metadata_file['project']))
                 else:
                     raise Exception('Did not find metadata file', metadata_file)
+            if self.is_delta and len(metadata_file['metadata_versions']) > 1:
+                raise Exception('Delta staging areas must not contain redundant '
+                                'versions of metadata.',
+                                metadata_file)
             if metadata_file['entity_type'].endswith('_file'):
                 if not metadata_file['descriptor_versions'] == metadata_file['metadata_versions']:
                     raise Exception('Did not find a matching descriptor file', metadata_file)
