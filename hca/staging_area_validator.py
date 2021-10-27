@@ -21,7 +21,6 @@ import google.cloud.storage as gcs
 import requests
 from jsonschema import (
     FormatChecker,
-    ValidationError,
     validate,
 )
 from more_itertools import (
@@ -32,6 +31,19 @@ T = TypeVar('T')
 JSON = MutableMapping[str, T]
 
 log = logging.getLogger(__name__)
+
+staging_area_properties_schema = {
+    '$schema': 'https://json-schema.org/draft/2019-09/schema',
+    'properties': {
+        'is_delta': {
+            'type': 'boolean'
+        }
+    },
+    'required': [
+        'is_delta'
+    ],
+    'additionalProperties': False
+}
 
 
 class StagingAreaValidator:
@@ -63,6 +75,9 @@ class StagingAreaValidator:
         self.ignore_dangling_inputs = ignore_dangling_inputs
 
         self.gcs = gcs.Client()
+
+        # A boolean to tell us if this is a delta or non-delta staging area
+        self.is_delta = None
         # A mapping of data file name to metadata id
         self.names_to_id: MutableMapping[str, str] = {}
         # The status of each metadata file checked
@@ -97,11 +112,26 @@ class StagingAreaValidator:
 
     def _run(self):
         self.file_errors.clear()
-        self.validate_files('links')
-        self.validate_files('metadata')
-        self.validate_files('descriptors')
-        self.validate_files('data')
-        self.check_results()
+        self.validate_staging_area_properties()
+        if not self.file_errors:
+            self.validate_files('links')
+            self.validate_files('metadata')
+            self.validate_files('descriptors')
+            self.validate_files('data')
+            self.check_results()
+
+    def validate_staging_area_properties(self) -> None:
+        """
+        Verify and parse the staging area properties file.
+        """
+        print('Checking staging area properties')
+        properties_file_path = self.sa_path + 'staging_area.json'
+        blob = self.bucket.get_blob(properties_file_path)
+        assert isinstance(blob, gcs.Blob), properties_file_path
+        file_json = self.download_blob_as_json(blob)
+        self.validate_file_json(file_json, blob.name, staging_area_properties_schema)
+        self.is_delta = file_json['is_delta']
+        assert isinstance(self.is_delta, bool), file_json
 
     def validate_files(self, path: str) -> None:
         print(f'Checking files in {self.sa_path}{path}')
@@ -266,10 +296,15 @@ class StagingAreaValidator:
         if metadata_file is None:
             self.extra_files.append(blob.name)
 
-    def validate_file_json(self, file_json: JSON, file_name: str) -> None:
+    def validate_file_json(self,
+                           file_json: JSON,
+                           file_name: str,
+                           schema: Optional[JSON] = None
+                           ) -> None:
         if self.validate_json:
+            print(f'Validating JSON of {file_name}')
             try:
-                self.validator.validate_json(file_json, file_name)
+                self.validator.validate_json(file_json, schema)
             except Exception as e:
                 log.error('File %s failed json validation.', file_name)
                 self.file_errors[file_name] = e
@@ -327,17 +362,17 @@ class StagingAreaValidator:
 class SchemaValidator:
 
     @classmethod
-    def validate_json(cls, file_json: JSON, file_name: str):
-        print(f'Validating JSON of {file_name}')
-        try:
-            schema = cls._download_schema(file_json['describedBy'])
-        except json.decoder.JSONDecodeError as e:
-            schema_url = file_json['describedBy']
-            raise Exception('Failed to parse schema JSON', file_name, schema_url) from e
-        try:
-            validate(file_json, schema, format_checker=FormatChecker())
-        except ValidationError as e:
-            raise ValidationError(f'File {file_name}') from e
+    def validate_json(cls,
+                      file_json: JSON,
+                      schema: Optional[JSON] = None
+                      ) -> None:
+        if schema is None:
+            try:
+                schema = cls._download_schema(file_json['describedBy'])
+            except json.decoder.JSONDecodeError as e:
+                schema_url = file_json['describedBy']
+                raise Exception('Failed to parse schema JSON', schema_url) from e
+        validate(file_json, schema, format_checker=FormatChecker())
 
     @classmethod
     @lru_cache
