@@ -10,8 +10,8 @@ These instructions assume you are working from the repository root, and that you
 corresponding pypi project. It's encouraged that any changes to this package be tested via [testpypi](https://test.pypi.org) first.
 (NB you will need accounts on both PyPI and test.pypi.org, as well as permission to upload to this project in both.)
 
->  !warning!
-    Be sure to update the version number in the `setup.py` file before uploading to PyPI.!
+>   **⚠ WARNING:**
+>   Be sure to update the version number in the `setup.py` file before uploading to PyPI!
 
 * Install `build`: 
 ```
