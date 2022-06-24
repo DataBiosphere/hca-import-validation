@@ -2,3 +2,19 @@
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "hca-import-validation"
+version = "0.0.5"
+dependencies = [
+    "requests",
+    "google",
+    "google-cloud-core",
+    "google-cloud-storage",
+    "jsonschema",
+    "more-itertools",
+    "strict-rfc3339",
+]
+
+[project.optional-dependencies]
+Requires-Python = ">=3.6"
