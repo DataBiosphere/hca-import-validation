@@ -14,5 +14,5 @@ dependencies = [
     "jsonschema",
     "more-itertools",
     "strict-rfc3339",
-    "python_version >= '3.6'",
+    "python>=3.6",
 ]
