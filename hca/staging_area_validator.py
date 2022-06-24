@@ -19,6 +19,7 @@ from urllib import (
 
 import google.cloud.storage as gcs
 import requests
+from requests.adapters import HTTPAdapter, Retry
 from jsonschema import (
     FormatChecker,
     validate,
@@ -379,6 +380,12 @@ class SchemaValidator:
     @lru_cache(maxsize=None)
     def _download_schema(cls, schema_url: str) -> JSON:
         log.debug('Downloading schema %s', schema_url)
-        response = requests.get(schema_url, allow_redirects=False)
+
+        s = requests.Session()
+        retries = Retry(total=5, backoff_factor=0.2, status_forcelist=[ 500, 502, 503, 504 ])
+        s.mount('http://', HTTPAdapter(max_retries=retries))
+        s.mount('https://', HTTPAdapter(max_retries=retries))
+
+        response =s.get(schema_url, allow_redirects=False)
         response.raise_for_status()
         return response.json()
