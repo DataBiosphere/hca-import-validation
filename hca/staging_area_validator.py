@@ -375,7 +375,8 @@ class SchemaValidator:
         validate(file_json, schema, format_checker=FormatChecker())
 
     @classmethod
-    @lru_cache
+    # setting to maxsize=None so as not to evict old values, and maybe help avoid connectivity issues (DI-22)
+    @lru_cache(maxsize=None)
     def _download_schema(cls, schema_url: str) -> JSON:
         log.debug('Downloading schema %s', schema_url)
         response = requests.get(schema_url, allow_redirects=False)
