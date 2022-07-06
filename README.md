@@ -9,7 +9,7 @@ python validate_staging_area.py --staging-area <gs_path> --ignore-dangling-input
 ```
 
 ## PRs
-Once you have tested locally, built and pushed to TestPyPi successfully, you can submit a PR. Current reviewers are aherbst-broad and danielsotihros
+Once you have tested locally, built and pushed to TestPyPi successfully, you can submit a PR. Current reviewers are `aherbst-broad` and `danielsotirhos`.
 
 ## Building and publishing
 
