@@ -2,34 +2,17 @@ import base64
 import json
 import logging
 import uuid
-from functools import (
-    cached_property,
-    lru_cache,
-)
-from typing import (
-    MutableMapping,
-    MutableSequence,
-    Optional,
-    Tuple,
-    TypeVar,
-)
-from urllib import (
-    parse,
-)
+
+from functools import cached_property, lru_cache
+from typing import MutableMapping, MutableSequence, Optional, Tuple, TypeVar
+from urllib import parse
 
 import google.cloud.storage as gcs
 import requests
-from requests.adapters import (
-    HTTPAdapter,
-    Retry,
-)
-from jsonschema import (
-    FormatChecker,
-    validate,
-)
-from more_itertools import (
-    one,
-)
+
+from jsonschema import FormatChecker, validate
+from more_itertools import one
+from requests.adapters import HTTPAdapter, Retry
 
 T = TypeVar("T")
 JSON = MutableMapping[str, T]
@@ -37,10 +20,10 @@ JSON = MutableMapping[str, T]
 log = logging.getLogger(__name__)
 
 staging_area_properties_schema = {
-    '$schema': 'https://json-schema.org/draft/2019-09/schema',
-    'properties': {'is_delta': {'type': 'boolean'}},
-    'required': ['is_delta'],
-    'additionalProperties': False,
+    "$schema": "https://json-schema.org/draft/2019-09/schema",
+    "properties": {"is_delta": {"type": "boolean"}},
+    "required": ["is_delta"],
+    "additionalProperties": False,
 }
 
 
@@ -55,16 +38,16 @@ class StagingAreaValidator:
             log.warning("File is not part of a subgraph: %s", file_name)
         if self.file_errors:
             exit_code |= 1
-            log.error('Encountered %i files with errors', len(self.file_errors))
+            log.error("Encountered %i files with errors", len(self.file_errors))
         return exit_code
 
     date_format = "%Y-%m-%dT%H:%M:%S.%fZ"
 
     def __init__(
-            self,
-            staging_area: str,
-            ignore_dangling_inputs: bool,
-            validate_json: bool,
+        self,
+        staging_area: str,
+        ignore_dangling_inputs: bool,
+        validate_json: bool,
     ) -> None:
         super().__init__()
         self.staging_area = staging_area
@@ -94,8 +77,8 @@ class StagingAreaValidator:
         Parse a GCS URL into its Bucket and path components
         """
         split_url = parse.urlsplit(gcs_url)
-        if split_url.scheme != 'gs' or not split_url.netloc:
-            print('Error: Google Cloud Storage URL must be in gs://<bucket>[/<path>] format')
+        if split_url.scheme != "gs" or not split_url.netloc:
+            print("Error: Google Cloud Storage URL must be in gs://<bucket>[/<path>] format")
             exit(1)
         if split_url.path.endswith("/"):
             print('Error: Google Cloud Storage URL must not end with a "/"')
@@ -157,28 +140,34 @@ class StagingAreaValidator:
         for link in file_json["links"]:
             link_type = link["link_type"]
             if link_type == "process_link":
-                self.add_metadata_file(entity_id=link["process_id"],
-                                       entity_type=link["process_type"],
-                                       project_uuid=project_uuid,
-                                       category="process")
+                self.add_metadata_file(
+                    entity_id=link["process_id"],
+                    entity_type=link["process_type"],
+                    project_uuid=project_uuid,
+                    category="process",
+                )
                 for category in ("input", "output", "protocol"):
                     for entity in link[f"{category}s"]:
                         entity_type = entity[f"{category}_type"]
                         entity_id = entity[f"{category}_id"]
-                        self.add_metadata_file(entity_id=entity_id,
-                                               entity_type=entity_type,
-                                               project_uuid=project_uuid,
-                                               category=category)
+                        self.add_metadata_file(
+                            entity_id=entity_id,
+                            entity_type=entity_type,
+                            project_uuid=project_uuid,
+                            category=category,
+                        )
             elif link_type == "supplementary_file_link":
                 assert link["entity"]["entity_type"] == "project", link["entity"]
                 assert link["entity"]["entity_id"] == project_uuid, link["entity"]
                 for entity in link["files"]:
                     entity_type = entity["file_type"]
                     entity_id = entity["file_id"]
-                    self.add_metadata_file(entity_id=entity_id,
-                                           entity_type=entity_type,
-                                           project_uuid=project_uuid,
-                                           category="supplementary")
+                    self.add_metadata_file(
+                        entity_id=entity_id,
+                        entity_type=entity_type,
+                        project_uuid=project_uuid,
+                        category="supplementary",
+                    )
         if project_uuid not in self.metadata_files:
             self.add_metadata_file(
                 entity_id=project_uuid,
@@ -188,7 +177,7 @@ class StagingAreaValidator:
             )
 
     def add_metadata_file(
-            self, entity_id: str, entity_type: str, project_uuid: str, category: str
+        self, entity_id: str, entity_type: str, project_uuid: str, category: str
     ) -> None:
         try:
             file = self.metadata_files[entity_id]
@@ -225,7 +214,9 @@ class StagingAreaValidator:
             if metadata_type.endswith("_file"):
                 metadata_file["data_file_name"] = file_json["file_core"]["file_name"]
                 metadata_file["found_data_file"] = False
-            if metadata_type == "supplementary_file" and file_json.get("provenance", {}).get("submitter_id"):
+            if metadata_type == "supplementary_file" and file_json.get(
+                "provenance", {}
+            ).get("submitter_id"):
                 try:
                     self.validate_file_description(file_json.get("file_description"))
                 except Exception as e:
@@ -243,9 +234,11 @@ class StagingAreaValidator:
         strata = [
             {
                 dimension: values.split(",")
-                for dimension, values in (point.split("=")
-                                          for point in stratum.split(";"))
-            } for stratum in file_description.split("\n")
+                for dimension, values in (
+                    point.split("=") for point in stratum.split(";")
+                )
+            }
+            for stratum in file_description.split("\n")
         ]
         log.debug(strata)
         valid_keys = [
@@ -274,7 +267,9 @@ class StagingAreaValidator:
         if metadata_file := self.metadata_files.get(metadata_id):
             metadata_file["crc32c"] = file_json["crc32c"]
             metadata_versions = metadata_file["metadata_versions"]
-            assert descriptor_version in metadata_versions, f"Corresponding metadata version for descriptor version {descriptor_version} not found"
+            assert (
+                descriptor_version in metadata_versions
+            ), f"Corresponding metadata version for descriptor version {descriptor_version} not found"
             metadata_file["descriptor_versions"].add(descriptor_version)
         else:
             self.extra_files.append(blob.name)
@@ -283,7 +278,7 @@ class StagingAreaValidator:
         # Expected syntax: data/{file_path}
         prefix = self.sa_path + "data/"
         assert blob.name.startswith(prefix)
-        file_name = blob.name[len(prefix):]
+        file_name = blob.name[len(prefix) :]
         metadata_file = None
         if metadata_id := self.names_to_id.get(file_name):
             if metadata_file := self.metadata_files.get(metadata_id):
@@ -292,11 +287,9 @@ class StagingAreaValidator:
         if metadata_file is None:
             self.extra_files.append(blob.name)
 
-    def validate_file_json(self,
-                           file_json: JSON,
-                           file_name: str,
-                           schema: Optional[JSON] = None
-                           ) -> None:
+    def validate_file_json(
+            self, file_json: JSON, file_name: str, schema: Optional[JSON] = None
+    ) -> None:
         if self.validate_json:
             print(f"Validating JSON of {file_name}")
             try:
@@ -322,8 +315,10 @@ class StagingAreaValidator:
         else:
             if not metadata_file["found_metadata"]:
                 if metadata_file["entity_type"] == "project":
-                    log.warning("A metadata file was not found for project %s",
-                                one(metadata_file["project"]))
+                    log.warning(
+                        "A metadata file was not found for project %s",
+                        one(metadata_file["project"])
+                    )
                 else:
                     raise Exception("Did not find metadata file", metadata_file)
             if self.is_delta and len(metadata_file["metadata_versions"]) > 1:
@@ -331,8 +326,13 @@ class StagingAreaValidator:
                                 "versions of metadata.",
                                 metadata_file)
             if metadata_file["entity_type"].endswith("_file"):
-                if not metadata_file["descriptor_versions"] == metadata_file["metadata_versions"]:
-                    raise Exception("Did not find a matching descriptor file", metadata_file)
+                if (
+                    not metadata_file["descriptor_versions"]
+                    == metadata_file["metadata_versions"]
+                ):
+                    raise Exception(
+                        "Did not find a matching descriptor file", metadata_file
+                    )
                 if not metadata_file["found_data_file"]:
                     raise Exception("Did not find data file", metadata_file)
         try:
@@ -341,7 +341,9 @@ class StagingAreaValidator:
             pass
         else:
             if not stratification:
-                raise Exception("File has a invalid stratification value", metadata_file)
+                raise Exception(
+                    "File has a invalid stratification value", metadata_file
+                )
             else:
                 pass
 
@@ -358,10 +360,7 @@ class StagingAreaValidator:
 class SchemaValidator:
 
     @classmethod
-    def validate_json(cls,
-                      file_json: JSON,
-                      schema: Optional[JSON] = None
-                      ) -> None:
+    def validate_json(cls, file_json: JSON, schema: Optional[JSON] = None) -> None:
         if schema is None:
             try:
                 schema = cls._download_schema(file_json["describedBy"])
@@ -377,7 +376,9 @@ class SchemaValidator:
         log.debug("Downloading schema %s", schema_url)
 
         s = requests.Session()
-        retries = Retry(total=5, backoff_factor=0.2, status_forcelist=[500, 502, 503, 504])
+        retries = Retry(
+            total=5, backoff_factor=0.2, status_forcelist=[500, 502, 503, 504]
+        )
         s.mount("http://", HTTPAdapter(max_retries=retries))
         s.mount("https://", HTTPAdapter(max_retries=retries))
 
