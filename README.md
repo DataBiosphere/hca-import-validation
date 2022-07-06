@@ -34,7 +34,7 @@ python -m build
 ```
 python -m pip install --upgrade twine
 ```
-* To first test the upload
+* Test the upload:
 ```
 python -m twine upload --repository testpypi dist/*
 ```
