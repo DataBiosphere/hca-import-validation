@@ -19,7 +19,10 @@ from urllib import (
 
 import google.cloud.storage as gcs
 import requests
-from requests.adapters import HTTPAdapter, Retry
+from requests.adapters import (
+    HTTPAdapter,
+    Retry,
+)
 from jsonschema import (
     FormatChecker,
     validate,
