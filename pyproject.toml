@@ -6,6 +6,13 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "hca-import-validation"
 version = "0.0.7"
+description = "HCA Staging Import Validation"
+project_urls = {"Source" = "https://github.com/dataBiosphere/hca-import-validation"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+]
 requires-python = ">=3.6"
 dependencies = [
     "requests",
