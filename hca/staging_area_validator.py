@@ -28,7 +28,6 @@ staging_area_properties_schema = {
 
 
 class StagingAreaValidator:
-
     def main(self):
         self._run()
         exit_code = 0
@@ -78,7 +77,9 @@ class StagingAreaValidator:
         """
         split_url = parse.urlsplit(gcs_url)
         if split_url.scheme != "gs" or not split_url.netloc:
-            print("Error: Google Cloud Storage URL must be in gs://<bucket>[/<path>] format")
+            print(
+                "Error: Google Cloud Storage URL must be in gs://<bucket>[/<path>] format"
+            )
             exit(1)
         if split_url.path.endswith("/"):
             print('Error: Google Cloud Storage URL must not end with a "/"')
@@ -288,7 +289,7 @@ class StagingAreaValidator:
             self.extra_files.append(blob.name)
 
     def validate_file_json(
-            self, file_json: JSON, file_name: str, schema: Optional[JSON] = None
+        self, file_json: JSON, file_name: str, schema: Optional[JSON] = None
     ) -> None:
         if self.validate_json:
             print(f"Validating JSON of {file_name}")
@@ -317,14 +318,16 @@ class StagingAreaValidator:
                 if metadata_file["entity_type"] == "project":
                     log.warning(
                         "A metadata file was not found for project %s",
-                        one(metadata_file["project"])
+                        one(metadata_file["project"]),
                     )
                 else:
                     raise Exception("Did not find metadata file", metadata_file)
             if self.is_delta and len(metadata_file["metadata_versions"]) > 1:
-                raise Exception("Delta staging areas must not contain redundant "
-                                "versions of metadata.",
-                                metadata_file)
+                raise Exception(
+                    "Delta staging areas must not contain redundant "
+                    "versions of metadata.",
+                    metadata_file,
+                )
             if metadata_file["entity_type"].endswith("_file"):
                 if (
                     not metadata_file["descriptor_versions"]
@@ -358,7 +361,6 @@ class StagingAreaValidator:
 
 
 class SchemaValidator:
-
     @classmethod
     def validate_json(cls, file_json: JSON, schema: Optional[JSON] = None) -> None:
         if schema is None:
