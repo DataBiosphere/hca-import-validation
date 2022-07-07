@@ -278,7 +278,7 @@ class StagingAreaValidator:
         prefix = self.sa_path + "data/"
         assert blob.name.startswith(prefix)
         file_name = blob.name[len(prefix) :]
-        metadata_file = None
+        metadata_file = {}
         if metadata_id := self.names_to_id.get(file_name):
             if metadata_file := self.metadata_files.get(metadata_id):
                 metadata_file["found_data_file"] = True
