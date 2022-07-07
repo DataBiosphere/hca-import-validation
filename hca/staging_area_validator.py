@@ -2,14 +2,12 @@ import base64
 import json
 import logging
 import uuid
-
 from functools import cached_property, lru_cache
 from typing import MutableMapping, MutableSequence, Optional, Tuple, TypeVar
 from urllib import parse
 
 import google.cloud.storage as gcs
 import requests
-
 from jsonschema import FormatChecker, validate
 from more_itertools import one
 from requests.adapters import HTTPAdapter, Retry
