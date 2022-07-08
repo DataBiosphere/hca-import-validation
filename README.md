@@ -20,7 +20,7 @@ corresponding pypi project. It's encouraged that any changes to this package be 
 (NB you will need accounts on both PyPI and test.pypi.org, as well as permission to upload to this project in both.)
 
 >**⚠ WARNING:**
->Be sure to update the version number in the `setup.cfg` file before uploading to PyPI!<br>
+>Be sure to update the version number in the `pyproject.toml` file before uploading to PyPI!<br>
 
 * Install `build`:
 ```bash
