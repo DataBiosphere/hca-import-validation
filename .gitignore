@@ -1,2 +1,11 @@
+<<<<<<< HEAD
 #IDE files
 .idea/
+=======
+#IDE Files
+.idea/
+
+#Build Files
+*.egg-info/
+dist/
+>>>>>>> origin/main

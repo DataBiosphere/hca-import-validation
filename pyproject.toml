@@ -1,0 +1,25 @@
+# As per https://github.com/pypa/setuptools/blob/main/docs/userguide/quickstart.rst
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hca-import-validation"
+version = "0.0.8"
+description = "HCA Staging Import Validation"
+urls = {"Source" = "https://github.com/dataBiosphere/hca-import-validation"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+]
+requires-python = ">=3.6"
+dependencies = [
+    "requests",
+    "google",
+    "google-cloud-core",
+    "google-cloud-storage",
+    "jsonschema",
+    "more-itertools",
+    "strict-rfc3339",
+]
