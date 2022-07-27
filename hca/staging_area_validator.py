@@ -45,7 +45,7 @@ class StagingAreaValidator:
         staging_area: str,
         ignore_dangling_inputs: bool,
         validate_json: bool,
-        total_retries: float
+        total_retries
     ) -> None:
         super().__init__()
         self.staging_area = staging_area
@@ -295,7 +295,7 @@ class StagingAreaValidator:
         if self.validate_json:
             print(f"Validating JSON of {file_name}")
             try:
-                self.validator.validate_json(file_json, schema)
+                self.validator.validate_json(self.total_retries, file_json, schema)
             except Exception as e:
                 log.error("File %s failed json validation.", file_name)
                 self.file_errors[file_name] = e
@@ -363,10 +363,10 @@ class StagingAreaValidator:
 
 class SchemaValidator:
     @classmethod
-    def validate_json(cls, file_json: JSON, schema: Optional[JSON] = None) -> None:
+    def validate_json(cls, file_json: JSON, total_retries, schema: Optional[JSON] = None) -> None:
         if schema is None:
             try:
-                schema = cls._download_schema(file_json["describedBy"])
+                schema = cls._download_schema(file_json["describedBy"], total_retries)
             except json.decoder.JSONDecodeError as e:
                 schema_url = file_json["describedBy"]
                 raise Exception("Failed to parse schema JSON", schema_url) from e
@@ -375,7 +375,7 @@ class SchemaValidator:
     @classmethod
     # setting to maxsize=None so as not to evict old values, and maybe help avoid connectivity issues (DI-22)
     @lru_cache(maxsize=None)
-    def _download_schema(cls, schema_url: str) -> JSON:
+    def _download_schema(cls, schema_url: str, total_retries) -> JSON:
         log.debug("Downloading schema %s", schema_url)
 
         s = requests.Session()

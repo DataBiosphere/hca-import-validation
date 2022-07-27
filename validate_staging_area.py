@@ -24,7 +24,7 @@ def _parse_args(argv):
                         dest='validate_json',
                         help='Do not validate JSON documents against their schema.')
     parser.add_argument('--total-retries', '-t',
-                        type=float,
+                        type=int,
                         default=10,
                         dest='total_retries',
                         help='The number of times to retry the validation process.')
