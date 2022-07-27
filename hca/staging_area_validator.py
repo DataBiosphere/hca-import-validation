@@ -45,6 +45,7 @@ class StagingAreaValidator:
         staging_area: str,
         ignore_dangling_inputs: bool,
         validate_json: bool,
+        total_retries: float
     ) -> None:
         super().__init__()
         self.staging_area = staging_area
@@ -52,6 +53,8 @@ class StagingAreaValidator:
         self.ignore_dangling_inputs = ignore_dangling_inputs
 
         self.gcs = gcs.Client()
+        # Number of retries for validation
+        self.total_retries = total_retries
 
         # A boolean to tell us if this is a delta or non-delta staging area
         self.is_delta = None
@@ -377,7 +380,7 @@ class SchemaValidator:
 
         s = requests.Session()
         retries = Retry(
-            total=5, backoff_factor=0.2, status_forcelist=[500, 502, 503, 504]
+            total=total_retries, backoff_factor=0.2, status_forcelist=[500, 502, 503, 504]
         )
         s.mount("http://", HTTPAdapter(max_retries=retries))
         s.mount("https://", HTTPAdapter(max_retries=retries))
