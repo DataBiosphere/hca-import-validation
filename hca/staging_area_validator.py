@@ -1,3 +1,4 @@
+
 import base64
 import json
 import logging
@@ -26,9 +27,13 @@ staging_area_properties_schema = {
 
 
 class StagingAreaValidator:
+    """Validates a file against a schema"""
+    # pylint: disable=too-many-instance-attributes
     def main(self):
+        """ main function """
         self._run()
         exit_code = 0
+        # pylint: disable=invalid-name
         for file_name, e in self.file_errors.items():
             log.error("Error with file: %s", file_name, exc_info=e)
         for file_name in self.extra_files:
@@ -70,6 +75,9 @@ class StagingAreaValidator:
 
     @cached_property
     def validator(self):
+        """
+        validator function
+        """
         return SchemaValidator()
 
     def _parse_gcs_url(self, gcs_url: str) -> Tuple[gcs.Bucket, str]:
@@ -256,6 +264,7 @@ class StagingAreaValidator:
 
     def validate_descriptors_file(self, blob: gcs.Blob) -> None:
         # Expected syntax: descriptors/{metadata_type}/{metadata_id}_{version}.json
+        # for next round of dev - metadata_type variable is not used (according to pylint)
         metadata_type, descriptor_file = blob.name.split("/")[-2:]
         assert descriptor_file.count("_") == 1
         assert descriptor_file.endswith(".json")
@@ -363,10 +372,10 @@ class StagingAreaValidator:
 
 class SchemaValidator:
     @classmethod
-    def validate_json(cls, file_json: JSON, total_retries, schema: Optional[JSON] = None) -> None:
+    def validate_json(cls, total_retries, file_json: JSON, schema: Optional[JSON] = None) -> None:
         if schema is None:
             try:
-                schema = cls._download_schema(file_json["describedBy"], total_retries)
+                schema = cls._download_schema(total_retries, file_json["describedBy"])
             except json.decoder.JSONDecodeError as e:
                 schema_url = file_json["describedBy"]
                 raise Exception("Failed to parse schema JSON", schema_url) from e
@@ -375,10 +384,11 @@ class SchemaValidator:
     @classmethod
     # setting to maxsize=None so as not to evict old values, and maybe help avoid connectivity issues (DI-22)
     @lru_cache(maxsize=None)
-    def _download_schema(cls, schema_url: str, total_retries) -> JSON:
+    def _download_schema(cls, total_retries, schema_url: str) -> JSON:
         log.debug("Downloading schema %s", schema_url)
 
         s = requests.Session()
+        print('total_retries = ' + str(total_retries))
         retries = Retry(
             total=total_retries, backoff_factor=0.2, status_forcelist=[500, 502, 503, 504]
         )
