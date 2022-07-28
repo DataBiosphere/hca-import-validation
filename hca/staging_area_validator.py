@@ -1,4 +1,3 @@
-
 import base64
 import json
 import logging
@@ -27,10 +26,8 @@ staging_area_properties_schema = {
 
 
 class StagingAreaValidator:
-    """Validates a file against a schema"""
-    # pylint: disable=too-many-instance-attributes
+        # pylint: disable=too-many-instance-attributes
     def main(self):
-        """ main function """
         self._run()
         exit_code = 0
         # pylint: disable=invalid-name
@@ -50,7 +47,7 @@ class StagingAreaValidator:
         staging_area: str,
         ignore_dangling_inputs: bool,
         validate_json: bool,
-        total_retries
+        total_retries,
     ) -> None:
         super().__init__()
         self.staging_area = staging_area
@@ -372,7 +369,9 @@ class StagingAreaValidator:
 
 class SchemaValidator:
     @classmethod
-    def validate_json(cls, total_retries, file_json: JSON, schema: Optional[JSON] = None) -> None:
+    def validate_json(
+            cls, total_retries, file_json: JSON, schema: Optional[JSON] = None
+    ) -> None:
         if schema is None:
             try:
                 schema = cls._download_schema(total_retries, file_json["describedBy"])
@@ -388,9 +387,11 @@ class SchemaValidator:
         log.debug("Downloading schema %s", schema_url)
 
         s = requests.Session()
-        print('total_retries = ' + str(total_retries))
+        print("total_retries = " + str(total_retries))
         retries = Retry(
-            total=total_retries, backoff_factor=0.2, status_forcelist=[500, 502, 503, 504]
+            total=total_retries,
+            backoff_factor=0.2,
+            status_forcelist=[500, 502, 503, 504],
         )
         s.mount("http://", HTTPAdapter(max_retries=retries))
         s.mount("https://", HTTPAdapter(max_retries=retries))
