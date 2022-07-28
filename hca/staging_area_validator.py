@@ -26,7 +26,7 @@ staging_area_properties_schema = {
 
 
 class StagingAreaValidator:
-        # pylint: disable=too-many-instance-attributes
+    # pylint: disable=too-many-instance-attributes
     def main(self):
         self._run()
         exit_code = 0
@@ -370,7 +370,7 @@ class StagingAreaValidator:
 class SchemaValidator:
     @classmethod
     def validate_json(
-            cls, total_retries, file_json: JSON, schema: Optional[JSON] = None
+        cls, total_retries, file_json: JSON, schema: Optional[JSON] = None
     ) -> None:
         if schema is None:
             try:

@@ -15,7 +15,7 @@ def _parse_args(argv):
         "-s",
         required=True,
         help="The Google Cloud Storage URL of the staging area. "
-        "Syntax is gs://<bucket>[/<path>]."
+        "Syntax is gs://<bucket>[/<path>].",
     )
     parser.add_argument(
         "--ignore-dangling-inputs",
@@ -23,7 +23,7 @@ def _parse_args(argv):
         action="store_true",
         default=False,
         help="Ignore errors caused by metadata files not found "
-        "in the staging area for input-only entities."
+        "in the staging area for input-only entities.",
     )
     parser.add_argument(
         "--no-json-validation",
@@ -31,7 +31,7 @@ def _parse_args(argv):
         action="store_false",
         default=True,
         dest="validate_json",
-        help="Do not validate JSON documents against their schema."
+        help="Do not validate JSON documents against their schema.",
     )
     parser.add_argument(
         "--total-retries",
@@ -39,7 +39,7 @@ def _parse_args(argv):
         type=int,
         default=10,
         dest="total_retries",
-        help="The number of times to retry the validation process."
+        help="The number of times to retry the validation process.",
     )
     return parser.parse_args(argv)
 
