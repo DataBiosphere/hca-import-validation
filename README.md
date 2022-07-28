@@ -1,7 +1,6 @@
 # HCA Staging Import Validator
 
-Runs a pre-check of a staging area to identify issues that might cause the
-snapshot or indexing processes to fail.
+Runs a pre-check of a staging area to identify issues that might cause the snapshot or indexing processes to fail.
 
 ## Testing
 NB - this can take over 10 hours to run, depending on the size of the staging area. In the future, we may want to add a fake test staging area to speed up testing.
