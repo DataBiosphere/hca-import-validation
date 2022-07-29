@@ -72,9 +72,6 @@ class StagingAreaValidator:
 
     @cached_property
     def validator(self):
-        """
-        validator function
-        """
         return SchemaValidator()
 
     def _parse_gcs_url(self, gcs_url: str) -> Tuple[gcs.Bucket, str]:
@@ -370,11 +367,14 @@ class StagingAreaValidator:
 class SchemaValidator:
     @classmethod
     def validate_json(
-        cls, total_retries, file_json: JSON, schema: Optional[JSON] = None
+        cls,
+        file_json: JSON,
+        total_retries: int,
+        schema: Optional[JSON] = None,
     ) -> None:
         if schema is None:
             try:
-                schema = cls._download_schema(total_retries, file_json["describedBy"])
+                schema = cls._download_schema(file_json["describedBy"], total_retries)
             except json.decoder.JSONDecodeError as e:
                 schema_url = file_json["describedBy"]
                 raise Exception("Failed to parse schema JSON", schema_url) from e
@@ -383,11 +383,11 @@ class SchemaValidator:
     @classmethod
     # setting to maxsize=None so as not to evict old values, and maybe help avoid connectivity issues (DI-22)
     @lru_cache(maxsize=None)
-    def _download_schema(cls, total_retries, schema_url: str) -> JSON:
+    def _download_schema(cls, schema_url: str, total_retries: int) -> JSON:
         log.debug("Downloading schema %s", schema_url)
 
         s = requests.Session()
-        print("total_retries = " + str(total_retries))
+        print(f"total_retries = {total_retries}")
         retries = Retry(
             total=total_retries,
             backoff_factor=0.2,
