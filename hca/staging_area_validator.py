@@ -55,9 +55,9 @@ class StagingAreaValidator:
         self.ignore_dangling_inputs = ignore_dangling_inputs
 
         self.gcs = gcs.Client()
+
         # Number of retries for validation
         self.total_retries = total_retries
-
         # A boolean to tell us if this is a delta or non-delta staging area
         self.is_delta = None
         # A mapping of data file name to metadata id
