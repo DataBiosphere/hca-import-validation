@@ -387,7 +387,7 @@ class SchemaValidator:
         log.debug("Downloading schema %s", schema_url)
 
         s = requests.Session()
-        print(f"total_retries = {total_retries}")
+        log.debug(f"total_retries = {total_retries}")
         retries = Retry(
             total=total_retries,
             backoff_factor=0.2,
