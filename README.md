@@ -1,7 +1,6 @@
 # HCA Staging Import Validator
 
-Runs a pre-check of a staging area to identify issues that might cause the
-snapshot or indexing processes to fail.
+Runs a pre-check of a staging area to identify issues that might cause the snapshot or indexing processes to fail.
 
 ## Testing
 NB - this can take over 10 hours to run, depending on the size of the staging area. In the future, we may want to add a fake test staging area to speed up testing.
@@ -20,7 +19,7 @@ corresponding pypi project. It's encouraged that any changes to this package be 
 (NB you will need accounts on both PyPI and test.pypi.org, as well as permission to upload to this project in both.)
 
 >**⚠ WARNING:**
->Be sure to update the version number in the `pyproject.toml` file before uploading to PyPI!<br>
+>Be sure to update the version number in the `pyproject.toml` file before building and uploading to (test)PyPI!<br>
 
 * Install `build`:
 ```bash

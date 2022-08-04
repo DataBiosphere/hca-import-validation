@@ -26,9 +26,11 @@ staging_area_properties_schema = {
 
 
 class StagingAreaValidator:
+    # pylint: disable=too-many-instance-attributes
     def main(self):
         self._run()
         exit_code = 0
+        # pylint: disable=invalid-name
         for file_name, e in self.file_errors.items():
             log.error("Error with file: %s", file_name, exc_info=e)
         for file_name in self.extra_files:
@@ -45,6 +47,7 @@ class StagingAreaValidator:
         staging_area: str,
         ignore_dangling_inputs: bool,
         validate_json: bool,
+        total_retries,
     ) -> None:
         super().__init__()
         self.staging_area = staging_area
@@ -53,6 +56,8 @@ class StagingAreaValidator:
 
         self.gcs = gcs.Client()
 
+        # Number of retries for validation
+        self.total_retries = total_retries
         # A boolean to tell us if this is a delta or non-delta staging area
         self.is_delta = None
         # A mapping of data file name to metadata id
@@ -253,6 +258,7 @@ class StagingAreaValidator:
 
     def validate_descriptors_file(self, blob: gcs.Blob) -> None:
         # Expected syntax: descriptors/{metadata_type}/{metadata_id}_{version}.json
+        # TODO: remove unused `metadata_type`
         metadata_type, descriptor_file = blob.name.split("/")[-2:]
         assert descriptor_file.count("_") == 1
         assert descriptor_file.endswith(".json")
@@ -292,7 +298,7 @@ class StagingAreaValidator:
         if self.validate_json:
             print(f"Validating JSON of {file_name}")
             try:
-                self.validator.validate_json(file_json, schema)
+                self.validator.validate_json(file_json, self.total_retries, schema)
             except Exception as e:
                 log.error("File %s failed json validation.", file_name)
                 self.file_errors[file_name] = e
@@ -360,10 +366,15 @@ class StagingAreaValidator:
 
 class SchemaValidator:
     @classmethod
-    def validate_json(cls, file_json: JSON, schema: Optional[JSON] = None) -> None:
+    def validate_json(
+        cls,
+        file_json: JSON,
+        total_retries: int,
+        schema: Optional[JSON] = None,
+    ) -> None:
         if schema is None:
             try:
-                schema = cls._download_schema(file_json["describedBy"])
+                schema = cls._download_schema(file_json["describedBy"], total_retries)
             except json.decoder.JSONDecodeError as e:
                 schema_url = file_json["describedBy"]
                 raise Exception("Failed to parse schema JSON", schema_url) from e
@@ -372,12 +383,15 @@ class SchemaValidator:
     @classmethod
     # setting to maxsize=None so as not to evict old values, and maybe help avoid connectivity issues (DI-22)
     @lru_cache(maxsize=None)
-    def _download_schema(cls, schema_url: str) -> JSON:
+    def _download_schema(cls, schema_url: str, total_retries: int) -> JSON:
         log.debug("Downloading schema %s", schema_url)
 
         s = requests.Session()
+        log.debug(f"total_retries = {total_retries}")
         retries = Retry(
-            total=5, backoff_factor=0.2, status_forcelist=[500, 502, 503, 504]
+            total=total_retries,
+            backoff_factor=0.2,
+            status_forcelist=[500, 502, 503, 504],
         )
         s.mount("http://", HTTPAdapter(max_retries=retries))
         s.mount("https://", HTTPAdapter(max_retries=retries))
