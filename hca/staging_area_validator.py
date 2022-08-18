@@ -42,12 +42,13 @@ class StagingAreaValidator:
 
     date_format = "%Y-%m-%dT%H:%M:%S.%fZ"
 
+    # removing total_retries as a config for now
     def __init__(
         self,
         staging_area: str,
         ignore_dangling_inputs: bool,
         validate_json: bool,
-        total_retries,
+        # total_retries,
     ) -> None:
         super().__init__()
         self.staging_area = staging_area
@@ -57,7 +58,7 @@ class StagingAreaValidator:
         self.gcs = gcs.Client()
 
         # Number of retries for validation
-        self.total_retries = total_retries
+        # self.total_retries = total_retries
         # A boolean to tell us if this is a delta or non-delta staging area
         self.is_delta = None
         # A mapping of data file name to metadata id
@@ -298,7 +299,8 @@ class StagingAreaValidator:
         if self.validate_json:
             print(f"Validating JSON of {file_name}")
             try:
-                self.validator.validate_json(file_json, self.total_retries, schema)
+                # self.validator.validate_json(file_json, self.total_retries, schema)
+                self.validator.validate_json(file_json, schema)
             except Exception as e:
                 log.error("File %s failed json validation.", file_name)
                 self.file_errors[file_name] = e
@@ -369,12 +371,13 @@ class SchemaValidator:
     def validate_json(
         cls,
         file_json: JSON,
-        total_retries: int,
+        # total_retries: int,
         schema: Optional[JSON] = None,
     ) -> None:
         if schema is None:
             try:
-                schema = cls._download_schema(file_json["describedBy"], total_retries)
+                # schema = cls._download_schema(file_json["describedBy"], total_retries)
+                schema = cls._download_schema(file_json["describedBy"])
             except json.decoder.JSONDecodeError as e:
                 schema_url = file_json["describedBy"]
                 raise Exception("Failed to parse schema JSON", schema_url) from e
@@ -382,14 +385,17 @@ class SchemaValidator:
 
     @classmethod
     # setting to maxsize=None so as not to evict old values, and maybe help avoid connectivity issues (DI-22)
+    # Could also have used the dagster.RetryPolicy for this
     @lru_cache(maxsize=None)
-    def _download_schema(cls, schema_url: str, total_retries: int) -> JSON:
+    # def _download_schema(cls, schema_url: str, total_retries: int) -> JSON:
+    def _download_schema(cls, schema_url: str) -> JSON:
         log.debug("Downloading schema %s", schema_url)
 
         s = requests.Session()
-        log.debug(f"total_retries = {total_retries}")
+        # log.debug(f"total_retries = {total_retries}")
         retries = Retry(
-            total=total_retries,
+            # total=total_retries,
+            total=12,
             backoff_factor=0.2,
             status_forcelist=[500, 502, 503, 504],
         )

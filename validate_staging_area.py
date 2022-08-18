@@ -33,14 +33,15 @@ def _parse_args(argv):
         dest="validate_json",
         help="Do not validate JSON documents against their schema.",
     )
-    parser.add_argument(
-        "--total-retries",
-        "-t",
-        type=int,
-        default=10,
-        dest="total_retries",
-        help="The number of times to retry the validation process.",
-    )
+    # May add this back later if we really need to set this in the config
+    # parser.add_argument(
+    #     "--total-retries",
+    #     "-t",
+    #     type=int,
+    #     default=10,
+    #     dest="total_retries",
+    #     help="The number of times to retry the validation process.",
+    # )
     return parser.parse_args(argv)
 
 
@@ -50,6 +51,6 @@ if __name__ == "__main__":
         staging_area=args.staging_area,
         ignore_dangling_inputs=args.ignore_dangling_inputs,
         validate_json=args.validate_json,
-        total_retries=args.total_retries,
+        # total_retries=args.total_retries,
     )
     sys.exit(adapter.main())
