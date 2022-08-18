@@ -376,7 +376,6 @@ class SchemaValidator:
         if schema is None:
             try:
                 schema = cls._download_schema(file_json["describedBy"], total_retries)
-                # schema = cls._download_schema(file_json["describedBy"])
             except json.decoder.JSONDecodeError as e:
                 schema_url = file_json["describedBy"]
                 raise Exception("Failed to parse schema JSON", schema_url) from e
@@ -386,14 +385,12 @@ class SchemaValidator:
     # setting to maxsize=None so as not to evict old values, and maybe help avoid connectivity issues (DI-22)
     @lru_cache(maxsize=None)
     def _download_schema(cls, schema_url: str, total_retries: int) -> JSON:
-    # def _download_schema(cls, schema_url: str) -> JSON:
         log.debug("Downloading schema %s", schema_url)
 
         s = requests.Session()
         log.debug(f"total_retries = {total_retries}")
         retries = Retry(
             total=total_retries,
-            # total=12,
             backoff_factor=0.2,
             status_forcelist=[500, 502, 503, 504],
         )

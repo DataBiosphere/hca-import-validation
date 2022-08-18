@@ -33,7 +33,6 @@ def _parse_args(argv):
         dest="validate_json",
         help="Do not validate JSON documents against their schema.",
     )
-    # Might add this back later if we decide we want this
     parser.add_argument(
         "--total-retries",
         "-t",
