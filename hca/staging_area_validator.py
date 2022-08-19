@@ -299,7 +299,6 @@ class StagingAreaValidator:
             print(f"Validating JSON of {file_name}")
             try:
                 self.validator.validate_json(file_json, self.total_retries, schema)
-                # self.validator.validate_json(file_json, schema)
             except Exception as e:
                 log.error("File %s failed json validation.", file_name)
                 self.file_errors[file_name] = e
