@@ -4,3 +4,6 @@
 #Build Files
 *.egg-info/
 dist/
+build/
+poetry.lock
+
