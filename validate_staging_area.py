@@ -50,6 +50,6 @@ if __name__ == "__main__":
         staging_area=args.staging_area,
         ignore_dangling_inputs=args.ignore_dangling_inputs,
         validate_json=args.validate_json,
-        total_retries=args.total_retries
+        total_retries=args.total_retries,
     )
     sys.exit(adapter.main())
