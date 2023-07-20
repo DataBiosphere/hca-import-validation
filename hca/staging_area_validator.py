@@ -47,7 +47,7 @@ class StagingAreaValidator:
         staging_area: str,
         ignore_dangling_inputs: bool,
         validate_json: bool,
-        total_retries,
+        total_retries=10,
     ) -> None:
         super().__init__()
         self.staging_area = staging_area
