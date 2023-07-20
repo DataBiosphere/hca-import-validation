@@ -46,10 +46,6 @@ def _parse_args(argv):
 
 if __name__ == "__main__":
     args = _parse_args(sys.argv[1:])
-    adapter = StagingAreaValidator(
-        staging_area=args.staging_area,
-        ignore_dangling_inputs=args.ignore_dangling_inputs,
-        validate_json=args.validate_json,
-        total_retries=args.total_retries,
-    )
+    adapter = StagingAreaValidator(staging_area=args.staging_area, ignore_dangling_inputs=args.ignore_dangling_inputs,
+                                   validate_json=args.validate_json, total_retries=args.total_retries)
     sys.exit(adapter.main())
