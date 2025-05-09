@@ -258,8 +258,7 @@ class StagingAreaValidator:
 
     def validate_descriptors_file(self, blob: gcs.Blob) -> None:
         # Expected syntax: descriptors/{metadata_type}/{metadata_id}_{version}.json
-        # TODO: remove unused `metadata_type`
-        metadata_type, descriptor_file = blob.name.split("/")[-2:]
+        descriptor_file = blob.name.split("/")[-1]
         assert descriptor_file.count("_") == 1
         assert descriptor_file.endswith(".json")
 
