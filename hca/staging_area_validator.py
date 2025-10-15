@@ -209,8 +209,8 @@ class StagingAreaValidator:
         metadata_id, metadata_version = metadata_file[:-5].split("_")
         file_json = self.download_blob_as_json(blob)
         self.validate_file_json(file_json, blob.name)
-        if provenance := file_json.get("provenance"):
-            assert metadata_id == provenance["document_id"]
+        provenance = file_json["provenance"]
+        assert metadata_id == provenance["document_id"]
         if metadata_file := self.metadata_files.get(metadata_id):
             metadata_file["name"].add(blob.name)
             metadata_file["metadata_versions"].add(metadata_version)
@@ -218,9 +218,7 @@ class StagingAreaValidator:
             if metadata_type.endswith("_file"):
                 metadata_file["data_file_name"] = file_json["file_core"]["file_name"]
                 metadata_file["found_data_file"] = False
-            if metadata_type == "supplementary_file" and file_json.get(
-                "provenance", {}
-            ).get("submitter_id"):
+            if metadata_type == "supplementary_file" and provenance.get("submitter_id"):
                 try:
                     self.validate_file_description(file_json.get("file_description"))
                 except Exception as e:
