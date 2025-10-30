@@ -264,8 +264,7 @@ class StagingAreaValidator:
 
     def validate_descriptors_file(self, blob: gcs.Blob) -> None:
         # Expected syntax: descriptors/{metadata_type}/{metadata_id}_{version}.json
-        # TODO: remove unused `metadata_type`
-        metadata_type, descriptor_file = blob.name.split("/")[-2:]
+        descriptor_file = blob.name.split("/")[-1]
         assert descriptor_file.count("_") == 1
         assert descriptor_file.endswith(".json")
 
@@ -278,6 +277,14 @@ class StagingAreaValidator:
         if metadata_file := self.metadata_files.get(metadata_id):
             metadata_file["crc32c"] = file_json["crc32c"]
             metadata_versions = metadata_file["metadata_versions"]
+
+            # Sequence file data_files might not be present if they are managed access.
+            # File Descriptor v2.1.0 allows for the drs_uri to be a string or null.
+            # In both of these cases, we set found_data_file to True
+            if metadata_file["entity_type"] == "sequence_file":
+                if "drs_uri" in file_json:
+                    metadata_file["found_data_file"] = True
+
             assert (
                 descriptor_version in metadata_versions
             ), f"Corresponding metadata version for descriptor version {descriptor_version} not found"
